@@ -1,0 +1,31 @@
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Unzip Library
+      run: unzip Arsip.zip -d extracted_files
+
+    - name: Compile Dylib
+      run: |
+        xcrun -sdk iphoneos clang -dynamiclib -arch arm64 \
+          -miphoneos-version-min=14.0 \
+          -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+          -Iextracted_files \
+          -Lextracted_files -lapi \
+          -framework Foundation -framework UIKit -framework AudioToolbox \
+          KeyChecker.m -o KeyChecker.dylib
+
+    - name: Upload Result
+      uses: actions/upload-artifact@v4
+      with:
+        name: KeyChecker-Dylib
+        path: KeyChecker.dylib
